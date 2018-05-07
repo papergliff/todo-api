@@ -3,19 +3,19 @@ const request = require('supertest')
 const { app } = require('../server')
 const { Todo } = require('../models/todo')
 
-beforeEach((done) => {
+beforeEach(done => {
   Todo.remove({}).then(() => done())
 })
 
 describe('POST /todos', () => {
-  it('should create a new todo', (done) => {
+  it('should create a new todo', done => {
     const text = 'Test todo text'
 
     request(app)
       .post('/todos')
       .send({text})
       .expect(200)
-      .expect((res) => {
+      .expect(res => {
         expect(res.body.text).toBe(text)
       })
       .end((err, res) => {
@@ -23,13 +23,13 @@ describe('POST /todos', () => {
           return done(err)
         }
 
-        Todo.find().then((todos) => {
+        Todo.find().then(todos => {
           expect(todos.length).toBe(1)
           expect(todos[0].text).toBe(text)
           expect(todos[0].completed).toBe(false)
           expect(todos[0].completedAt).toBe(null)
           done()
-        }).catch((err) => done(err))
+        }).catch(err => done(err))
       }) 
   })
 
@@ -43,10 +43,36 @@ describe('POST /todos', () => {
           return done(err)
         }
 
-        Todo.find({}).then((todos) => {
+        Todo.find({}).then(todos => {
           expect(todos.length).toBe(0)
           done()
-        }).catch((err) => done(err))
+        }).catch(err => done(err))
+      })
+  })
+})
+
+describe('GET /todos', () => {
+  it('should fetch all todos', done => {
+    const text = 'New todo'
+
+    request(app).post('/todos').send({text})
+    
+    request(app)
+      .get('/todos')
+      .expect('Content-Type', /json/)
+      .expect(200)
+      .end((err, res) => {
+        if (err) {
+          return done(err)
+        }
+
+        console.log(res.body)
+
+        Todo.find().then(todos => {
+          expect(todos.length).toBe(1)
+          expect(todos[0].text).toBe(text)
+          done()
+        }).catch(err => done(err))
       })
   })
 })
