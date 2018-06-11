@@ -34,6 +34,21 @@ const UserSchema = new mongoose.Schema({
   todos: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Todo' }]
 })
 
+UserSchema.pre('save', function (next) {
+  const user = this
+
+  if (user.isModified('password')) {
+    bcrypt.genSalt(10, (err, salt) => {
+      bcrypt.hash(user.password, salt, (err, hash) => {
+        user.password = hash
+        next()
+      })
+    })
+  } else {
+    next()
+  }
+})
+
 UserSchema.methods.toJSON = function () {
   const user = this
   const userObject = user.toObject()
@@ -95,21 +110,6 @@ UserSchema.statics.findByCredentials = function (email, password) {
     })
   })
 }
-
-UserSchema.pre('save', function (next) {
-  const user = this
-
-  if (user.isModified('password')) {
-    bcrypt.genSalt(10, (err, salt) => {
-      bcrypt.hash(user.password, salt, (err, hash) => {
-        user.password = hash
-        next()
-      })
-    })
-  } else {
-    next()
-  }
-})
 
 const User = mongoose.model('User', UserSchema)
 
