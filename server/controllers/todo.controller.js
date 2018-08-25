@@ -3,49 +3,58 @@ const _ = require('lodash')
 
 const { Todo } = require('../models/todo')
 
-const listTodos = (req, res) => {
-  Todo.find({
-    creator: req.user._id
-  }).then(todos => {
+// GET /todos
+const listTodos = async (req, res) => {
+  try {
+    const todos = await Todo.find({
+      creator: req.user._id
+    })
     res.send({todos})
-  }, e => {
+  } catch (e) {
     res.status(400).send(e)
-  })
+  }
 }
 
-const createTodo = (req, res) => {
+// POST /todos
+const createTodo = async (req, res) => {
   const todo = new Todo({
     text: req.body.text,
     creator: req.user._id
   })
 
-  todo.save().then(doc => {
+  try {
+    const doc = await todo.save()
     res.send(doc)
-  }, e => {
+  } catch (e) {
     res.status(400).send(e)
-  })
+  }
 }
 
-const showTodo = (req, res) => {
+// GET /todos/:id
+const showTodo = async (req, res) => {
   const id = req.params.id
 
   if (!ObjectID.isValid(id)) {
     return res.status(404).send()
   }
 
-  Todo.findOne({
-    _id: id,
-    creator: req.user._id
-  }).then(todo => {
+  try {
+    const todo = await Todo.findOne({
+      _id: id,
+      creator: req.user._id
+    })
     if (!todo) {
       return res.status(404).send()
     }
-
+    
     res.send({todo})
-  }).catch(e => res.status(400).send())
+  } catch (e) {
+    res.status(400).send()
+  }
 }
 
-const updateTodo = (req, res) => {
+// PATCH /todos/:id
+const updateTodo = async (req, res) => {
   const id = req.params.id
   const body = _.pick(req.body, ['text', 'completed'])
 
@@ -60,32 +69,40 @@ const updateTodo = (req, res) => {
     body.completedAt = null
   }
 
-  Todo.findOneAndUpdate({ _id: id, creator: req.user._id }, { $set: body }, { new: true }).then(todo => {
+  try {
+    const todo = await Todo.findOneAndUpdate({ _id: id, creator: req.user._id }, { $set: body }, { new: true })
     if (!todo) {
       return res.status(404).send()
     }
 
     res.send({todo})
-  }).catch(e => res.status(400).send())
+  } catch (e) {
+    res.status(400).send()
+  }
 }
 
-const deleteTodo = (req, res) => {
+// DELETE /todos/:id
+const deleteTodo = async (req, res) => {
   const id = req.params.id
-
+  
   if (!ObjectID.isValid(id)) {
     return res.status(404).send()
   }
+  
+  try {
+    const todo = await Todo.findOneAndRemove({
+      _id: id,
+      creator: req.user._id
+    })
 
-  Todo.findOneAndRemove({
-    _id: id,
-    creator: req.user._id
-  }).then(todo => {
     if (!todo) {
       return res.status(404).send()
     }
-
+  
     res.send({todo})
-  }).catch(e => res.status(400).send())
+  } catch (e) {
+    res.status(400).send()
+  }
 }
 
 module.exports = { listTodos, createTodo, showTodo, updateTodo, deleteTodo}
